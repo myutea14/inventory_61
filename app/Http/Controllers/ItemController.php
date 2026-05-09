@@ -17,7 +17,7 @@ class ItemController extends Controller
     {
         $validated = $request->validate([
             'item_name' => 'required|string',
-            'price' => 'required|integer',
+            'price' => 'required|integer', 
             'stock' => 'required|integer',
             'category_id' => 'required|exists:categories,id'
         ]);
