@@ -3,45 +3,31 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StoreItemRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
         return true;
     }
 
-    public function rules()
+    public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'quantity' => 'required|integer|min:0',
-            'price' => 'required|numeric|min:0',
+            // Pastikan menggunakan item_name sesuai database
+            'item_name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'price' => 'required|numeric',
+            'stock' => 'required|integer',
             'category_id' => 'required|exists:categories,id',
         ];
     }
 
-    public function messages()
+    // Fungsi untuk sanitasi (menghapus tag HTML)
+    protected function prepareForValidation()
     {
-        return [
-            'name.required' => 'Nama item wajib diisi.',
-            'price.numeric' => 'Harga harus berupa angka.',
-            'category_id.exists' => 'Kategori tidak ditemukan.',
-        ];
-    }
-
-    protected function failedValidation(Validator $validator)
-    {
-        throw new HttpResponseException(
-
-            response()->json([
-                'status' => 'error',
-                'data' => null,
-                'message' => $validator->errors()->first()
-            ], 500  )
-
-        );
+        $this->merge([
+            'item_name' => strip_tags($this->item_name),
+        ]);
     }
 }

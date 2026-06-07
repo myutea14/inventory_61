@@ -2,53 +2,63 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
-class AuthController extends Controller
+// Ubah extends Controller menjadi extends BaseController
+class AuthController extends BaseController 
 {
     public function register(Request $request)
     {
-        $fields = $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|string|unique:users,email',
-            'password' => 'required|string|confirmed'
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:5|confirmed',
         ]);
+
+        if ($validator->fails()) {
+            return $this->error('Validasi gagal.', 422, $validator->errors());
+        }
 
         $user = User::create([
-            'name' => $fields['name'],
-            'email' => $fields['email'],
-            'password' => Hash::make($fields['password']),
-            'role' => 'user' // Default role
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            // Jika ada field 'role' di databasemu, bisa tambahkan: 'role' => 'user'
         ]);
 
-        $token = $user->createToken('nana_token_061')->plainTextToken;
+        // Buat token Sanctum
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response([
+        // Gunakan response wrapper sukses
+        return $this->success([
             'user' => $user,
             'token' => $token
-        ], 201);
+        ], 'User berhasil didaftarkan.', 201);
     }
 
     public function login(Request $request)
     {
-        $fields = $request->validate([
-            'email' => 'required|string',
-            'password' => 'required|string'
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
         ]);
 
-        $user = User::where('email', $fields['email'])->first();
+        $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($fields['password'], $user->password)) {
-            return response(['message' => 'Kredensial salah!'], 401);
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            return $this->error('Email atau password salah.', 401);
         }
 
-        $token = $user->createToken('nana_token_061')->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response([
+        // Gunakan response wrapper sukses
+        return $this->success([
             'user' => $user,
             'token' => $token
-        ], 200);
+        ], 'Login berhasil.', 200);
     }
 }

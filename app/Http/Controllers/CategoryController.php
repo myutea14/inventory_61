@@ -2,78 +2,68 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
-use App\Services\CategoryService;
+use App\Models\Category;
+use Exception;
 use Illuminate\Http\JsonResponse;
 
-class CategoryController extends Controller 
+class CategoryController extends BaseController
 {
-    protected CategoryService $svc;
 
-    public function __construct(CategoryService $svc) 
+    public function index(): JsonResponse
     {
-        $this->svc = $svc;
+        $categories = Category::all();
+        return $this->success($categories, 'Berhasil mengambil semua data kategori.');
     }
 
-    public function index() 
-    {
-        return response()->json([
-            'status'  => 'success',
-            'data'    => $this->svc->all(),
-            'message' => 'Berhasil menarik semua data Kategori'
-        ]);
-    }
-
-    public function store(StoreCategoryRequest $req) 
-    {
-        $cat = $this->svc->create($req->validated());
-        
-        return response()->json([
-            'status'  => 'success',
-            'data'    => $cat,
-            'message' => 'Kategori berhasil dibuat'
-        ], 201);
-    }
-
-    public function show($id) 
+    public function store(StoreCategoryRequest $request): JsonResponse
     {
         try {
-            $cat = $this->svc->find($id);
-            
-            return response()->json([
-                'status'  => 'success',
-                'data'    => $cat,
-                'message' => 'Berhasil menarik satu data kategori'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status'  => 'error',
-                'data'    => null,
-                'message' => $e->getMessage()
-            ], 404);
+            $category = Category::create($request->validated());
+            return $this->success($category, 'Kategori berhasil dibuat.', 201);
+        } catch (Exception $e) {
+            return $this->error('Gagal membuat kategori.', 500, [$e->getMessage()]);
         }
     }
 
-    public function update(UpdateCategoryRequest $req, $id) 
+    public function show($id): JsonResponse
     {
-        $cat = $this->svc->update($id, $req->validated());
-        
-        return response()->json([
-            'status'  => 'success',
-            'data'    => $cat,
-            'message' => 'Kategori berhasil diperbarui'
-        ]);
+        $category = Category::find($id);
+
+        if (!$category) {
+            return $this->error('Kategori tidak ditemukan.', 404);
+        }
+
+        return $this->success($category, 'Berhasil mengambil data kategori.');
     }
 
-    public function destroy($id) 
+    public function update(UpdateCategoryRequest $request, $id): JsonResponse
     {
-        $this->svc->delete($id);
-        
-        return response()->json([
-            'status'  => 'success',
-            'data'    => null,
-            'message' => 'Kategori berhasil dihapus'
-        ], 204);
+        try {
+            $category = Category::find($id);
+
+            if (!$category) {
+                return $this->error('Kategori tidak ditemukan untuk diperbarui.', 404);
+            }
+
+            $category->update($request->validated());
+            return $this->success($category, 'Kategori berhasil diperbarui.');
+        } catch (Exception $e) {
+            return $this->error('Gagal memperbarui kategori.', 500, [$e->getMessage()]);
+        }
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        $category = Category::find($id);
+
+        if (!$category) {
+            return $this->error('Kategori tidak ditemukan.', 404);
+        }
+
+        $category->delete();
+        return $this->success(null, 'Kategori berhasil dihapus.');
     }
 }
