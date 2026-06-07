@@ -4,19 +4,36 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateCategoryRequest extends FormRequest 
+class UpdateCategoryRequest extends FormRequest
 {
-    public function authorize() 
+
+    public function authorize(): bool
     {
         return true;
     }
 
-    public function rules() 
+    protected function prepareForValidation()
     {
-        $id = $this->route('category');
-        
+        $this->merge([
+            'name' => strip_tags(trim($this->name)),
+        ]);
+    }
+
+    public function rules(): array
+    {
+        // Mengabaikan ID kategori saat ini untuk validasi unique sewaktu update
+        $categoryId = $this->route('category');
+
         return [
-            'name' => "required|string|unique:categories,name,{$id}"
+            'name' => 'sometimes|required|string|max:255|unique:categories,name,' . $categoryId,
         ];
     }
+
+protected function prepareForValidation()
+{
+    $this->merge([
+        'name' => strip_tags(trim($this->name)),
+        'description' => strip_tags(trim($this->description)),
+    ]);
+}
 }

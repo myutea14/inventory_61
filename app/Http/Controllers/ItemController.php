@@ -2,78 +2,69 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\StoreItemRequest;
 use App\Http\Requests\UpdateItemRequest;
-use App\Services\ItemService;
+use App\Models\Item;
+use Exception;
 use Illuminate\Http\JsonResponse;
 
-class ItemController extends Controller 
+class ItemController extends BaseController
 {
-    protected ItemService $svc;
 
-    public function __construct(ItemService $svc) 
+    public function index(): JsonResponse
     {
-        $this->svc = $svc;
+        $items = Item::with('category')->get();
+        return $this->success($items, 'Berhasil mengambil semua data item.');
     }
 
-    public function index() 
-    {
-        return response()->json([
-            'status'  => 'success',
-            'data'    => $this->svc->all(),
-            'message' => 'Berhasil menarik semua data Item'
-        ]);
-    }
-
-    public function store(StoreItemRequest $req) 
-    {
-        $item = $this->svc->create($req->validated());
-        
-        return response()->json([
-            'status'  => 'success',
-            'data'    => $item,
-            'message' => 'Item berhasil dibuat'
-        ], 201);
-    }
-
-    public function show($id) 
+    public function store(StoreItemRequest $request): JsonResponse
     {
         try {
-            $item = $this->svc->find($id);
-            
-            return response()->json([
-                'status'  => 'success',
-                'data'    => $item,
-                'message' => 'Berhasil menarik satu data Item'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status'  => 'error',
-                'data'    => null,
-                'message' => $e->getMessage()
-            ], 404);
+            // Data yang masuk sudah otomatis tersanitasi lewat FormRequest
+            $item = Item::create($request->validated());
+            return $this->success($item, 'Item berhasil dibuat.', 201);
+        } catch (Exception $e) {
+            return $this->error('Gagal membuat item.', 500, [$e->getMessage()]);
         }
     }
 
-    public function update(UpdateItemRequest $req, $id) 
+    public function show($id): JsonResponse
     {
-        $item = $this->svc->update($id, $req->validated());
-        
-        return response()->json([
-            'status'  => 'success',
-            'data'    => $item,
-            'message' => 'Item berhasil diperbarui'
-        ]);
+        $item = Item::with('category')->find($id);
+
+        if (!$item) {
+            return $this->error('Item tidak ditemukan.', 404);
+        }
+
+        return $this->success($item, 'Berhasil mengambil data item.');
     }
 
-    public function destroy($id) 
+    public function update(UpdateItemRequest $request, $id): JsonResponse
     {
-        $this->svc->delete($id);
-        
-        return response()->json([
-            'status'  => 'success',
-            'data'    => null,
-            'message' => 'Item berhasil dihapus'
-        ], 204);
+        try {
+            $item = Item::find($id);
+
+            if (!$item) {
+                return $this->error('Item tidak ditemukan untuk diperbarui.', 404);
+            }
+
+            $item->update($request->validated());
+            return $this->success($item, 'Item berhasil diperbarui.');
+        } catch (Exception $e) {
+            return $this->error('Gagal memperbarui item.', 500, [$e->getMessage()]);
+        }
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        $item = Item::find($id);
+
+        if (!$item) {
+            return $this->error('Item tidak ditemukan.', 404);
+        }
+
+        $item->delete();
+        return $this->success(null, 'Item berhasil dihapus.');
     }
 }
