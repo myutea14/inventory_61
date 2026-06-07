@@ -4,24 +4,33 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreCategoryRequest extends FormRequest 
+class StoreCategoryRequest extends FormRequest
 {
-    public function authorize() 
+
+    public function authorize(): bool
     {
         return true;
     }
 
-    public function rules() 
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'name' => strip_tags(trim($this->name)),
+        ]);
+    }
+
+    public function rules(): array
     {
         return [
-            'name' => 'required|string|unique:categories,name'
+            'name' => 'required|string|max:255|unique:categories,name',
         ];
     }
 
-    public function messages() 
-    {
-        return [
-            'name.unique' => 'Nama kategori sudah ada.'
-        ];
-    }
+protected function prepareForValidation()
+{
+    $this->merge([
+        'name' => strip_tags(trim($this->name)),
+        'description' => strip_tags(trim($this->description)),
+    ]);
+}
 }

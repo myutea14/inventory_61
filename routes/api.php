@@ -1,30 +1,25 @@
 <?php
 
-use App\Http\Controllers\AuthController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\CategoryController;
 
-// 1. Public Routes (Bisa diakses tanpa token/login)
+// Rute Publik (Bisa diakses tanpa login/token)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-
-// 2. Protected Routes (Wajib membawa Bearer Token yang valid)
+// Rute Terproteksi (Wajib menyertakan Authorization Bearer Token)
 Route::middleware('auth:sanctum')->group(function () {
     
-    // Semua user yang login (role 'user' maupun 'admin') bisa mengakses ini
-    Route::get('/items', function () {
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Berhasil akses data items nim 061'
-        ], 200);
+    // Rute CRUD Otomatis untuk Items dan Categories
+    Route::apiResource('items', ItemController::class);
+    Route::apiResource('categories', CategoryController::class);
+    
+    // Rute optional untuk mengecek data user yang sedang login
+    Route::get('/user', function (Request $request) {
+        return $request->user();
     });
-
-    // Ditambahkan di sini: Hanya user yang login DAN memiliki role 'admin' yang bisa mengakses
-    Route::delete('/items/{id}', function ($id) {
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Item dengan ID ' . $id . ' berhasil dihapus oleh Admin NIM 061.'
-        ], 200);
-    })->middleware('role:admin'); // Mengunci rute delete dengan custom middleware role
-
+    
 });
