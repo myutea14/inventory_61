@@ -3,6 +3,13 @@
 **Base URL:** `http://localhost:8000/api/v1`
 
 ---
+# Dokumentasi API Inventory
+
+## Endpoint Items
+
+`GET /api/v1/items?category_id={id}`
+
+**Description:** Filter items by category, optional. Jika `category_id` tidak disertakan, akan menampilkan semua data.
 
 ## 1. Authentication Endpoints
 
