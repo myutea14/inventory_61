@@ -17,7 +17,7 @@ public function index (Request $request) {
     // Memuat Item beserta relasi category-nya
     $query = Item::with('category'); 
 
-    // Logika filter: Jika ada parameter category_id di request
+    // Menambahkan filter bedasarkan category_id dari request API
     if ($request->filled('category_id')) { 
         $query->where('category_id', $request->category_id); 
     } 
