@@ -7,16 +7,24 @@ use App\Http\Requests\StoreItemRequest;
 use App\Http\Requests\UpdateItemRequest;
 use App\Models\Item;
 use Exception;
+use Illuminate\Http\Request; // <-- TAMBAHKAN BARIS INI
 use Illuminate\Http\JsonResponse;
 
 class ItemController extends BaseController
 {
 
-    public function index(): JsonResponse
-    {
-        $items = Item::with('category')->get();
-        return $this->success($items, 'Berhasil mengambil semua data item.');
-    }
+public function index (Request $request) {
+    // Memuat Item beserta relasi category-nya
+    $query = Item::with('category'); 
+
+    // Logika filter: Jika ada parameter category_id di request
+    if ($request->filled('category_id')) { 
+        $query->where('category_id', $request->category_id); 
+    } 
+
+    // Mengembalikan response sukses
+    return $this->success($query->get()); 
+}
 
     public function store(StoreItemRequest $request): JsonResponse
     {
