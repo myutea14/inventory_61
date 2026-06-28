@@ -10,8 +10,9 @@ use App\Http\Controllers\CategoryController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Rute Terproteksi (Wajib menyertakan Authorization Bearer Token)
-Route::middleware('auth:sanctum')->group(function () {
+// Rute Terproteksi (Wajib menyertakan Authorization Bearer Token & Rate Limiting)
+// Tambahan 'throttle:60,1' ada di sini untuk jawaban Soal 4
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     
     // Rute CRUD Otomatis untuk Items dan Categories
     Route::apiResource('items', ItemController::class);

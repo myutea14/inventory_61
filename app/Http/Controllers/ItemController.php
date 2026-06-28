@@ -5,24 +5,31 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\StoreItemRequest;
 use App\Http\Requests\UpdateItemRequest;
-use App\Models\Item;
-use Exception;
+use App\Services\ItemService; // <-- Ini wajib dipanggil
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Exception;
 
 class ItemController extends BaseController
 {
+    // Deklarasikan service-nya di sini
+    protected ItemService $svc;
 
-    public function index(): JsonResponse
+    public function __construct(ItemService $svc)
     {
-        $items = Item::with('category')->get();
-        return $this->success($items, 'Berhasil mengambil semua data item.');
+        $this->svc = $svc;
+    }
+
+    public function index(Request $request): JsonResponse 
+    {
+        // Pakai service untuk mengambil semua data
+        return $this->success($this->svc->all(), 'Berhasil mengambil data item.');
     }
 
     public function store(StoreItemRequest $request): JsonResponse
     {
         try {
-            // Data yang masuk sudah otomatis tersanitasi lewat FormRequest
-            $item = Item::create($request->validated());
+            $item = $this->svc->create($request->validated());
             return $this->success($item, 'Item berhasil dibuat.', 201);
         } catch (Exception $e) {
             return $this->error('Gagal membuat item.', 500, [$e->getMessage()]);
@@ -31,25 +38,19 @@ class ItemController extends BaseController
 
     public function show($id): JsonResponse
     {
-        $item = Item::with('category')->find($id);
-
-        if (!$item) {
+        try {
+            $item = $this->svc->find($id);
+            return $this->success($item, 'Berhasil mengambil data item.');
+        } catch (Exception $e) {
             return $this->error('Item tidak ditemukan.', 404);
         }
-
-        return $this->success($item, 'Berhasil mengambil data item.');
     }
 
     public function update(UpdateItemRequest $request, $id): JsonResponse
     {
         try {
-            $item = Item::find($id);
-
-            if (!$item) {
-                return $this->error('Item tidak ditemukan untuk diperbarui.', 404);
-            }
-
-            $item->update($request->validated());
+            // Proses update diserahkan ke service
+            $item = $this->svc->update($id, $request->validated());
             return $this->success($item, 'Item berhasil diperbarui.');
         } catch (Exception $e) {
             return $this->error('Gagal memperbarui item.', 500, [$e->getMessage()]);
@@ -58,13 +59,12 @@ class ItemController extends BaseController
 
     public function destroy($id): JsonResponse
     {
-        $item = Item::find($id);
-
-        if (!$item) {
-            return $this->error('Item tidak ditemukan.', 404);
+        try {
+            // Proses delete diserahkan ke service
+            $this->svc->delete($id);
+            return $this->success(null, 'Item berhasil dihapus.');
+        } catch (Exception $e) {
+            return $this->error('Item tidak ditemukan atau gagal dihapus.', 404, [$e->getMessage()]);
         }
-
-        $item->delete();
-        return $this->success(null, 'Item berhasil dihapus.');
     }
 }

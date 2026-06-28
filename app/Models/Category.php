@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
+    use HasFactory;
+
     // Biar kolom 'name' dan 'description' bisa diisi pas create/update
     protected $fillable = ['name', 'description'];
 
